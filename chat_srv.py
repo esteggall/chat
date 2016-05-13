@@ -140,7 +140,7 @@ def chat_server():
                             if (data[1] == 'x'):
                                 print("exiting chat room")
                                 leave_channel(channel, client_port, srv_sock, sock)
-                                join_channel("Home", client_id, srv_sock, sock)
+                                join_channel("Home", client_port, srv_sock, sock)
                                 continue;
                             elif (data[1] == 'l'):
                                 print("listing chat rooms")
