@@ -14,10 +14,11 @@ CLIENT_TO_CHAT = []
 def list_users(channel):
     users = CHAT_ROOMS.get(channel)
     print("users in chat room {0}".format(channel))
-    print("users: {0}".format(users))
+    users_msg = "users:\n"
     for usr in users:
         print(user)
-    return users
+        users_msg += user
+    return users_msg
     
 def list_channels():
     chat_rooms = CHAT_ROOMS.keys()
@@ -117,8 +118,6 @@ def chat_server():
                     data = sock.recv(DATA_BUFF)
                     client_port = sock.getpeername()[1]
                     curr_channel = "Home" 
-                    print("CHAT_ROOMS: {0}".format(CHAT_ROOMS))
-                    print("CHAT_TO_CLIENTS: {0}".format(CLIENT_TO_CHAT))
                     
                     for channel,cli in CLIENT_TO_CHAT:
                         if cli == client_port:
@@ -137,7 +136,9 @@ def chat_server():
                                 continue;
                             elif (data[1] == 'u'):
                                 print("listing users in chat room")
-                                list_users(curr_channel)
+                                users_msg = list_users(curr_channel)
+                                print(users_msg)
+                                singlecast(srv_sock, sock, users_msg)
                                 continue;
                             if (data[1] == 'c'):
                                 channel = data.split()[1]
@@ -148,6 +149,7 @@ def chat_server():
                                 create_channel(channel, client_port)
                                 continue;
                             elif (data[1] == 'j'):
+                                channel = data.split()[1]
                                 if not channel:
                                     print("Please enter a channel")
                                     continue
