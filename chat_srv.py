@@ -22,9 +22,11 @@ def list_users(channel):
 def list_channels():
     chat_rooms = CHAT_ROOMS.keys()
     print("Available Channels:")
+    chat_rooms_msg = "\nAvailable Channels:\n"
     for channel in chat_rooms:
         print("    {0}".format(channel))
-    return chat_rooms
+        chat_rooms_msg += "    {0}\n".format(channel)
+    return chat_rooms_msg
 
 def leave_channel(channel, client_id):
     for i, (channel,cli_id) in enumerate(CLIENT_TO_CHAT):
@@ -116,7 +118,7 @@ def chat_server():
                     client_port = sock.getpeername()[1]
                     curr_channel = "Home" 
                     print("CHAT_ROOMS: {0}".format(CHAT_ROOMS))
-                    print("CHAT_OT_CLIENTS: {0}".format(CLIENT_TO_CHAT))
+                    print("CHAT_TO_CLIENTS: {0}".format(CLIENT_TO_CHAT))
                     
                     for channel,cli in CLIENT_TO_CHAT:
                         if cli == client_port:
@@ -130,7 +132,8 @@ def chat_server():
                                 continue;
                             elif (data[1] == 'l'):
                                 print("listing chat rooms")
-                                list_channels()
+                                channels = list_channels()
+                                singlecast(srv_sock, sock, channels)
                                 continue;
                             elif (data[1] == 'u'):
                                 print("listing users in chat room")
@@ -148,7 +151,7 @@ def chat_server():
                                 if not channel:
                                     print("Please enter a channel")
                                     continue
-                                print("joining chat room") 
+                                print("joining chat room {0}".format(channel)) 
                                 join_channel(channel, client_port)
                                 continue;
                             else:
