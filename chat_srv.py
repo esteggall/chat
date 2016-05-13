@@ -115,6 +115,8 @@ def chat_server():
                     data = sock.recv(DATA_BUFF)
                     client_port = sock.getpeername()[1]
                     curr_channel = "Home" 
+                    print("CHAT_ROOMS: {0}".format(CHAT_ROOMS))
+                    print("CHAT_OT_CLIENTS: {0}".format(CLIENT_TO_CHAT))
                     
                     for channel,cli in CLIENT_TO_CHAT:
                         if cli == client_port:
