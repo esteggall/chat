@@ -4,9 +4,11 @@
 
 import sys, socket, select
 
+CHAT_ROOM = "Home"
 DATA_BUFF = 8192
  
 def chat_client():
+    global CHAT_ROOM
     if(len(sys.argv) < 3) :
         print 'Usage : python chat_client.py hostname port'
         sys.exit()
@@ -25,7 +27,7 @@ def chat_client():
         sys.exit()
      
     print 'Connected to remote host. You can start sending messages'
-    sys.stdout.write('[Me] '); sys.stdout.flush()
+    sys.stdout.write('[' + CHAT_ROOM + '] '); sys.stdout.flush()
      
     while 1:
         socket_list = [sys.stdin, s]
@@ -43,13 +45,24 @@ def chat_client():
                 else :
                     #print data
                     sys.stdout.write(data)
-                    sys.stdout.write('[Me] '); sys.stdout.flush()     
+                    sys.stdout.write('[' + CHAT_ROOM + '] '); sys.stdout.flush()     
             
             else :
                 # user entered a message
                 msg = sys.stdin.readline()
                 s.send(msg)
-                sys.stdout.write('[Me] '); sys.stdout.flush() 
+                print(msg)
+                if (msg[0] == '/'):
+                    if(msg[1] == 'j'):
+                        channel = msg.split()[1]
+                        if (channel):
+                            CHAT_ROOM = channel
+                        else:
+                            print("[ERROR] Need to specify chat room")
+                    elif(msg[1] == 'x'):
+                        CHAT_ROOM = "Home" 
+        
+                sys.stdout.write('[' + CHAT_ROOM + '] '); sys.stdout.flush() 
 
 if __name__ == "__main__":
 
