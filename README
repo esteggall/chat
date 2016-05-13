@@ -1,0 +1,32 @@
+#### Basic Client/Server Chat (Python) ####
+This code provides a basic chat platform modeled loosely after IRC.
+The clients are allowed to chat amongst one another, as well as 
+create and join separate channels.
+
+## Starting up clients/server ##
+# Usage:
+# Start server
+python chat_srv.py
+
+# Two or more chat clients can be started 
+python chat_cli.py [host] [port]
+# Example
+python chat_cli.py localhost 9009
+
+## Chatting ##
+
+After the clients are started they can type messages back
+and forth. Lines beginning with the '/' character are used
+for administrative purposes as described below.
+
+## Chat Options ##
+
+Once a client has been started there are 6 options; 
+create new channel, join channel, list available channels,
+list users in current channel, and exit channel.
+
+/c channel_name - (c)reate channel "channel_name"                        
+/j channel_name - (j)oin channel "channel_name"                          
+/l - (l)ist channels" 
+/u - list (u)sers in current channel"                                    
+/x - e(x)it channel, this option returns you Home
