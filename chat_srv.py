@@ -14,7 +14,7 @@ CLIENT_TO_CHAT = []
 def list_users(channel):
     users = CHAT_ROOMS.get(channel)
     print("users in chat room {0} are {1}".format(channel, users))
-    users_msg = "users in {0}:\n".format(channel)
+    users_msg = "\nUsers in {0}:\n".format(channel)
     for usr in users:
         print("user ", usr)
         users_msg += str(usr) + '\n'
