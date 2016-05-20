@@ -24,7 +24,6 @@ def list_users(channel):
     
 def list_channels(curr_channel):
     global CHAT_ROOMS
-    print("HURRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR")
     chat_rooms = CHAT_ROOMS.keys()
     print("Available Channels:")
     chat_rooms_msg = "\nAvailable Channels:\n"
@@ -63,7 +62,6 @@ def join_channel(channel, client_id, sock):
         singlecast(sock, no_channel_msg)
         return -1
     else:
-        print("here")
         leave_channel(channel, client_id, sock)
         CLIENT_TO_CHAT.append((channel, client_id))
         CHAT_ROOMS[channel].append(client_id)
@@ -82,7 +80,6 @@ def create_channel(new_channel, client_id, sock):
     return 0
 
 def handle_chat_cmd(data, sock, client_port, curr_channel):
-    print("########################### data = ", data)
     if (data[1] == 'x'):
         print("exiting chat room")
         leave_channel(channel, client_port, sock)
@@ -159,7 +156,6 @@ def event_loop(srv_sock):
                         curr_channel = channel
                         break
                 if data:
-                    print("Data = {0}##########################".format(data))
                     if (data[0] == '/'):
                         print("Data = {0}".format(data))
                         handle_chat_cmd(data, sock, client_port, curr_channel)
