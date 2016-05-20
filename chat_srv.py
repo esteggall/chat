@@ -23,25 +23,19 @@ Chat Options:
 def list_users(channel):
     global CHAT_ROOMS
     users = CHAT_ROOMS.get(channel)
-    print("users in chat room {0} are {1}".format(channel, users))
     users_msg = "\nUsers in {0}:\n".format(channel)
     for usr in users:
-        print("user ", usr)
         users_msg += str(usr) + '\n'
-    print("user message == \n {0}".format(users_msg))
     return users_msg
     
 def list_channels(curr_channel):
     global CHAT_ROOMS
     chat_rooms = CHAT_ROOMS.keys()
-    print("Available Channels:")
     chat_rooms_msg = "\nAvailable Channels:\n"
     for channel in chat_rooms:
         if (channel == curr_channel):
-            print("    *{0}".format(channel))
             chat_rooms_msg += "    *{0}\n".format(channel)
         else: 
-            print("    {0}".format(channel))
             chat_rooms_msg += "    {0}\n".format(channel)
     return chat_rooms_msg
 
@@ -50,12 +44,10 @@ def leave_channel(channel, client_id, sock):
     global CHAT_ROOMS
     for i, (channel,cli_id) in enumerate(CLIENT_TO_CHAT):
         if (cli_id == client_id):
-            print("removing: {0},{1}".format(channel, cli_id))
             old_channel = channel
             del CLIENT_TO_CHAT[i]
 
     for a in CHAT_ROOMS.itervalues():
-        print("a = ", a)
         if( client_id in a):
             a.remove(client_id)
             return 0
@@ -66,7 +58,6 @@ def join_channel(channel, client_id, sock):
     global CLIENT_TO_CHAT
     global CHAT_ROOMS
     if channel not in CHAT_ROOMS:
-        print("[ERROR] That channel does not exist")
         no_channel_msg = "\n[ERROR] That channel does not exist\n"
         singlecast(sock, no_channel_msg)
         return -1
@@ -80,12 +71,11 @@ def join_channel(channel, client_id, sock):
 def create_channel(new_channel, client_id, sock):
     global CHAT_ROOMS
     if (new_channel in CHAT_ROOMS):
-        print("Channel {0} already exists".format(new_channel))
         chat_exists_msg = "\nChannel {0} already exists\n".format(new_channel)
         singlecast(sock, chat_exists_msg)
         return 0
     CHAT_ROOMS[new_channel] = []
-    print("created new chat room: {0}".format(new_channel))
+    print("{0} created new chat room: {1}".format(client_id, new_channel))
     return 0
 
 def handle_chat_cmd(data, sock, client_port, curr_channel):
@@ -94,24 +84,22 @@ def handle_chat_cmd(data, sock, client_port, curr_channel):
         err_msg = "\nyou entered /{0} which is not a valid option, please try again\n".format(data[1])
         singlecast(sock, err_msg)
         singlecast(sock, USAGE)
-        print("you entered /{0} which is not a valid option, please try again".format(data[1]))
+        print("user {0} entered invalid option".format(client_port))
         return 0
     if (data[1] == 'x'):
-        print("exiting chat room")
         leave_channel(channel, client_port, sock)
         join_channel("Home", client_port, sock)
+        print("user {0} exited chat room".format(client_port))
         return 0 
     elif (data[1] == 'l'):
-        print("listing chat rooms")
         channels = list_channels(curr_channel)
-        print("channels are {0}".format(channels))
         singlecast(sock, channels)
+        print("user {0} listed chat rooms".format(client_port))
         return 0
     elif (data[1] == 'u'):
-        print("listing users in chat room")
         users_msg = list_users(curr_channel)
-        print(users_msg)
         singlecast(sock, users_msg)
+        print("user {0} listed users in chat room".format(client_port))
         return 0 
     else:
         data.rstrip('\n')
@@ -121,15 +109,9 @@ def handle_chat_cmd(data, sock, client_port, curr_channel):
             return 0 
         cmd_tokenized = data.split()
         channel = cmd_tokenized[1]
-        print("channel is {0} cmd token is {1}".format(channel, cmd_tokenized))
-        if not channel:
-            print("Please enter a channel")
-            return 0
         if (data[1] == 'c'):
-            print("creating channel")
             create_channel(channel, client_port, sock)
         elif (data[1] == 'j'):
-            print("joining chat room {0}".format(channel)) 
             join_channel(channel, client_port, sock)
         else:
             return -1
@@ -172,7 +154,6 @@ def event_loop(srv_sock):
                         break
                 if data:
                     if (data[0] == '/'):
-                        print("Data = {0}".format(data))
                         handle_chat_cmd(data, sock, client_port, curr_channel)
                     else:
                         print("client {0} wrote {1}".format(client_port, data))
