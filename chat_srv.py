@@ -19,27 +19,51 @@ Chat Options:
      /x - e(x)it channel, this option returns you Home\n
 """
  
-
-def list_users(channel):
+"""
+list_users() -- lists all users that are in the same channel as the user isssuing the query
+[IN] sock -- socket of the user issuing the query
+[IN] channel -- channel of the user issuing the query
+returns      -- 0 on success, -1 on failure
+"""
+def list_users(sock, curr_channel):
     global CHAT_ROOMS
-    users = CHAT_ROOMS.get(channel)
-    users_msg = "\nUsers in {0}:\n".format(channel)
+    try:
+        users = CHAT_ROOMS.get(curr_channel)
+    except:
+        print("[ERROR] failed to get users in list_users()")
+        return -1
+    users_msg = "\nUsers in {0}:\n".format(curr_channel)
     for usr in users:
         users_msg += str(usr) + '\n'
-    return users_msg
+    singlecast(sock, users_msg)
+    return 0
     
-def list_channels(curr_channel):
+"""
+list_channels() -- list all channels available
+[IN] sock -- socket of the user issuing the query
+[IN] channel -- channel of the user issuing the query
+returns      -- 0 on success, -1 on failure
+"""
+def list_channels(sock, curr_channel):
     global CHAT_ROOMS
-    chat_rooms = CHAT_ROOMS.keys()
+    try:
+        chat_rooms = CHAT_ROOMS.keys()
+    except:
+        print("[ERROR] failed to get users in list_users()")
+        return -1
     chat_rooms_msg = "\nAvailable Channels:\n"
     for channel in chat_rooms:
+        # Use the * to indicate the current channel
         if (channel == curr_channel):
             chat_rooms_msg += "    *{0}\n".format(channel)
         else: 
             chat_rooms_msg += "    {0}\n".format(channel)
-    return chat_rooms_msg
+    singlecast(sock, chat_rooms_msg)
+    return 0
 
-def leave_channel(channel, client_id, sock):
+"""
+"""
+def leave_channel(curr_channel, client_id, sock):
     global CLIENT_TO_CHAT
     global CHAT_ROOMS
     for i, (channel,cli_id) in enumerate(CLIENT_TO_CHAT):
@@ -92,13 +116,11 @@ def handle_chat_cmd(data, sock, client_port, curr_channel):
         print("user {0} exited chat room".format(client_port))
         return 0 
     elif (data[1] == 'l'):
-        channels = list_channels(curr_channel)
-        singlecast(sock, channels)
+        channels = list_channels(sock, curr_channel)
         print("user {0} listed chat rooms".format(client_port))
         return 0
     elif (data[1] == 'u'):
-        users_msg = list_users(curr_channel)
-        singlecast(sock, users_msg)
+        users_msg = list_users(sock, curr_channel)
         print("user {0} listed users in chat room".format(client_port))
         return 0 
     else:
@@ -131,13 +153,14 @@ def handle_new_client(srv_sock):
     CLIENT_TO_CHAT.append(("Home", client_port))
     message = USAGE
     singlecast(sockfd, message) 
-    list_channels("Home")
+    list_channels(sockfd, "Home")
     broadcast_to_channel(srv_sock, sockfd, "[%s:%s] entered our chatting room\n" % addr, "Home")
     return client_port
 
 
 def event_loop(srv_sock):
     global CLIENT_TO_CHAT
+    global CHAT_ROOMS
     ready_to_read,ready_to_write,in_error = select.select(SOCKET_LIST,[],[],0)
       
     for sock in ready_to_read:
@@ -148,9 +171,16 @@ def event_loop(srv_sock):
                 data = sock.recv(DATA_BUFF)
                 client_port = sock.getpeername()[1]
                 curr_channel = "Home" 
+                """
                 for channel,cli in CLIENT_TO_CHAT:
                     if cli == client_port:
                         curr_channel = channel
+                        break
+                """
+                for key in CHAT_ROOMS:
+                    users_in_channel = CHAT_ROOMS[key]
+                    if (client_port in users_in_channel):
+                        curr_channel = key
                         break
                 if data:
                     if (data[0] == '/'):
@@ -184,6 +214,7 @@ def broadcast_to_channel(srv_sock, sock, message, channel):
             try :
                 socket.send(message)
             except :
+                print("[ERROR] broadcast() failed to send message")
                 socket.close()
                 if socket in SOCKET_LIST:
                     SOCKET_LIST.remove(socket)
@@ -192,7 +223,10 @@ def singlecast(sock, message):
     try:
         sock.send(message)
     except:
+        print("[ERROR] singlecast() failed to send message")
         sock.close()
+        return -1
+    return 0
 
 def chat_server():
     global SOCKET_LIST
