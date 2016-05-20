@@ -111,11 +111,17 @@ def join_channel(srv_sock, sock, channel, client_id):
         singlecast(sock, no_channel_msg)
         return -1
     else:
-        CHAT_ROOMS[channel].append(client_id)
+        try:
+            CHAT_ROOMS[channel].append(client_id)
+        except:
+            print("[ERROR] join_channel(), failed to add client to channel")
+            return -1
         users = CHAT_ROOMS[channel]
         num_users = len(users)
         num_users_msg = "\nThere are {0} user(s) in {1}\n".format(num_users, channel)
-        singlecast(sock, num_users_msg)
+        ret = singlecast(sock, num_users_msg)
+        if (ret < 0):
+            print("[ERROR] join_channel(), failed singlcast of message failed")
         print("added: {0} to {1}".format(client_id, channel))
     return 0
 
@@ -171,7 +177,10 @@ def handle_chat_cmd(srv_sock, data, sock, client_port, curr_channel):
     if (data[1] == 'x'):
         leave_channel(sock, curr_channel, client_port)
         print("CHAT _ROOMTS = ", CHAT_ROOMS)
-        join_channel(srv_sock, sock, "Home", client_port)
+        ret = join_channel(srv_sock, sock, "Home", client_port)
+        if (ret < 0):
+            print("[ERROR] handle_chat_cmd(), join_channel() failed!")
+            return -1
         print("user {0} exited chat room".format(client_port))
         return 0 
     # (l)ist
@@ -201,7 +210,10 @@ def handle_chat_cmd(srv_sock, data, sock, client_port, curr_channel):
         # (j)oin channel
         elif (data[1] == 'j'):
             leave_channel(sock, curr_channel, client_port)
-            join_channel(srv_sock, sock, channel, client_port)
+            ret = join_channel(srv_sock, sock, channel, client_port)
+            if (ret < 0):
+                print("[ERROR] handle_chat_cmd(), join_channel() failed!")
+                return -1
         else:
             return -1
     return 0 
@@ -272,7 +284,9 @@ def event_loop(srv_sock):
                 if data:
                     # If the message begins with a '/' it is handled as an administrative command
                     if (data[0] == '/'):
-                        handle_chat_cmd(srv_sock, data, sock, client_port, curr_channel)
+                        ret = handle_chat_cmd(srv_sock, data, sock, client_port, curr_channel)
+                        if (ret < 0):
+                            print("[ERROR] event_loop(): handle_chat_cmd() failed!")
                         print("chat rooms = {0}".format(CHAT_ROOMS))
                     # Otherwise we broadcast the message to the rest of the users in the chat room
                     else:
