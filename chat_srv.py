@@ -95,6 +95,7 @@ def handle_chat_cmd(data, sock, client_port, curr_channel):
         singlecast(sock, err_msg)
         singlecast(sock, USAGE)
         print("you entered /{0} which is not a valid option, please try again".format(data[1]))
+        return 0
     if (data[1] == 'x'):
         print("exiting chat room")
         leave_channel(channel, client_port, sock)
@@ -112,19 +113,26 @@ def handle_chat_cmd(data, sock, client_port, curr_channel):
         print(users_msg)
         singlecast(sock, users_msg)
         return 0 
-    cmd_tokenized = data.split()
-    channel = cmd_tokenized[1]
-    if not channel:
-        print("Please enter a channel")
-        return 0
-    if (data[1] == 'c'):
-        print("creating channel")
-        create_channel(channel, client_port, sock)
-    elif (data[1] == 'j'):
-        print("joining chat room {0}".format(channel)) 
-        join_channel(channel, client_port, sock)
     else:
-        return -1
+        data.rstrip('\n')
+        if(len(data) <= 3 or ' ' not in data):
+            err_msg = "\nPlease enter a channel\n"
+            singlecast(sock, err_msg)
+            return 0 
+        cmd_tokenized = data.split()
+        channel = cmd_tokenized[1]
+        print("channel is {0} cmd token is {1}".format(channel, cmd_tokenized))
+        if not channel:
+            print("Please enter a channel")
+            return 0
+        if (data[1] == 'c'):
+            print("creating channel")
+            create_channel(channel, client_port, sock)
+        elif (data[1] == 'j'):
+            print("joining chat room {0}".format(channel)) 
+            join_channel(channel, client_port, sock)
+        else:
+            return -1
     return 0 
 
 
