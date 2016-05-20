@@ -73,7 +73,40 @@ def create_channel(new_channel, client_id, sock):
     print("created new chat room: {0}".format(new_channel))
     return 0
 
-#def handle_chat_cmd(data):
+def handle_chat_cmd(data, sock, client_port):
+    if (data[1] == 'x'):
+        print("exiting chat room")
+        leave_channel(channel, client_port, sock)
+        join_channel("Home", client_port, sock)
+        return 0
+    elif (data[1] == 'l'):
+        print("listing chat rooms")
+        channels = list_channels(curr_channel)
+        singlecast(sock, channels)
+        return 0
+    elif (data[1] == 'u'):
+        print("listing users in chat room")
+        users_msg = list_users(curr_channel)
+        print(users_msg)
+        singlecast(sock, users_msg)
+        return 0 
+    if (data[1] == 'c'):
+        channel = data.split()[1]
+        if not channel:
+            print("Please enter a channel")
+            return 0
+        print("creating channel")
+        create_channel(channel, client_port, sock)
+    elif (data[1] == 'j'):
+        channel = data.split()[1]
+        if not channel:
+            print("Please enter a channel")
+            return 0
+        print("joining chat room {0}".format(channel)) 
+        join_channel(channel, client_port, sock)
+    else:
+        print("you entered /{0} which is not a valid option, please try again".format(data[1]))
+    return 0 
 
 
 def handle_new_client(srv_sock):
@@ -105,56 +138,22 @@ def event_loop(srv_sock):
     for sock in ready_to_read:
         if sock == srv_sock: 
             client_port = handle_new_client(srv_sock)
-         
         else:
             try:
                 data = sock.recv(DATA_BUFF)
                 client_port = sock.getpeername()[1]
                 curr_channel = "Home" 
-                
                 for channel,cli in CLIENT_TO_CHAT:
                     if cli == client_port:
                         curr_channel = channel
                         break
                 if data:
                     if (data[0] == '/'):
-                        if (data[1] == 'x'):
-                            print("exiting chat room")
-                            leave_channel(channel, client_port, sock)
-                            join_channel("Home", client_port, sock)
-                            continue;
-                        elif (data[1] == 'l'):
-                            print("listing chat rooms")
-                            channels = list_channels(curr_channel)
-                            singlecast(sock, channels)
-                            continue;
-                        elif (data[1] == 'u'):
-                            print("listing users in chat room")
-                            users_msg = list_users(curr_channel)
-                            print(users_msg)
-                            singlecast(sock, users_msg)
-                            continue;
-                        if (data[1] == 'c'):
-                            channel = data.split()[1]
-                            if not channel:
-                                print("Please enter a channel")
-                                continue
-                            print("creating channel")
-                            create_channel(channel, client_port, sock)
-                            continue;
-                        elif (data[1] == 'j'):
-                            channel = data.split()[1]
-                            if not channel:
-                                print("Please enter a channel")
-                                continue
-                            print("joining chat room {0}".format(channel)) 
-                            join_channel(channel, client_port, sock)
-                            continue;
-                        else:
-                            print("you entered /{0} which is not a valid option, please try again".format(data[1]))
-                            continue;
-                    print("client {0} wrote {1}".format(client_port, data))
-                    broadcast_to_channel(srv_sock, sock, "\r" + curr_channel + ':[' + str(sock.getpeername()) + '] ' + data, curr_channel)  
+                        handle_chat_cmd(data, sock, curr_channel, client_port)
+                    else:
+                        print("client {0} wrote {1}".format(client_port, data))
+                        broadcast_to_channel(srv_sock, sock, "\r" + curr_channel + ':[' + str(sock.getpeername()) + '] ' + data, curr_channel)  
+                # Failed to recieve data here, remove user and broadcast user's departure 
                 else:
                     if sock in SOCKET_LIST:
                         SOCKET_LIST.remove(sock)
