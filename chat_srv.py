@@ -9,7 +9,6 @@ DATA_BUFF = 8192
 PORT = 9009
 NUM_LISTENERS = 64
 CHAT_ROOMS = {}
-CLIENT_TO_CHAT = []
 USAGE = """
 Chat Options:
      /c channel_name - (c)reate channel "channel_name"
@@ -64,30 +63,23 @@ def list_channels(sock, curr_channel):
 """
 """
 def leave_channel(curr_channel, client_id, sock):
-    global CLIENT_TO_CHAT
     global CHAT_ROOMS
-    for i, (channel,cli_id) in enumerate(CLIENT_TO_CHAT):
-        if (cli_id == client_id):
-            old_channel = channel
-            del CLIENT_TO_CHAT[i]
-
+    print("leaving channel {0} chat rooms = {1}".format(curr_channel, CHAT_ROOMS))
     for a in CHAT_ROOMS.itervalues():
         if( client_id in a):
             a.remove(client_id)
+            print("leaving channel {0} chat rooms = {1}".format(curr_channel, CHAT_ROOMS))
             return 0
     print("[ERROR] could not find channel to leave")
     return -1
 
 def join_channel(channel, client_id, sock):
-    global CLIENT_TO_CHAT
     global CHAT_ROOMS
     if channel not in CHAT_ROOMS:
         no_channel_msg = "\n[ERROR] That channel does not exist\n"
         singlecast(sock, no_channel_msg)
         return -1
     else:
-        leave_channel(channel, client_id, sock)
-        CLIENT_TO_CHAT.append((channel, client_id))
         CHAT_ROOMS[channel].append(client_id)
         print("added: {0} to {1}".format(client_id, channel))
     return 0
@@ -111,7 +103,7 @@ def handle_chat_cmd(data, sock, client_port, curr_channel):
         print("user {0} entered invalid option".format(client_port))
         return 0
     if (data[1] == 'x'):
-        leave_channel(channel, client_port, sock)
+        leave_channel(curr_channel, client_port, sock)
         join_channel("Home", client_port, sock)
         print("user {0} exited chat room".format(client_port))
         return 0 
@@ -134,6 +126,7 @@ def handle_chat_cmd(data, sock, client_port, curr_channel):
         if (data[1] == 'c'):
             create_channel(channel, client_port, sock)
         elif (data[1] == 'j'):
+            leave_channel(curr_channel, client_port, sock)
             join_channel(channel, client_port, sock)
         else:
             return -1
@@ -142,7 +135,6 @@ def handle_chat_cmd(data, sock, client_port, curr_channel):
 
 def handle_new_client(srv_sock):
     global CHAT_ROOMS
-    global CLIENT_TO_CHAT
     global USAGE
     sockfd, addr = srv_sock.accept()
     # Addr is a tuple: (host, port)
@@ -150,7 +142,6 @@ def handle_new_client(srv_sock):
     SOCKET_LIST.append(sockfd)
     print "Client (%s, %s) connected" % addr
     CHAT_ROOMS["Home"].append(client_port)
-    CLIENT_TO_CHAT.append(("Home", client_port))
     message = USAGE
     singlecast(sockfd, message) 
     list_channels(sockfd, "Home")
@@ -159,7 +150,6 @@ def handle_new_client(srv_sock):
 
 
 def event_loop(srv_sock):
-    global CLIENT_TO_CHAT
     global CHAT_ROOMS
     ready_to_read,ready_to_write,in_error = select.select(SOCKET_LIST,[],[],0)
       
@@ -168,15 +158,10 @@ def event_loop(srv_sock):
             client_port = handle_new_client(srv_sock)
         else:
             try:
+                print("chat rooms = {0}".format(CHAT_ROOMS))
                 data = sock.recv(DATA_BUFF)
                 client_port = sock.getpeername()[1]
                 curr_channel = "Home" 
-                """
-                for channel,cli in CLIENT_TO_CHAT:
-                    if cli == client_port:
-                        curr_channel = channel
-                        break
-                """
                 for key in CHAT_ROOMS:
                     users_in_channel = CHAT_ROOMS[key]
                     if (client_port in users_in_channel):
@@ -192,8 +177,10 @@ def event_loop(srv_sock):
                 else:
                     if sock in SOCKET_LIST:
                         SOCKET_LIST.remove(sock)
-                        for (channel,cli_id) in CLIENT_TO_CHAT:
-                            if (cli_id == client_port):
+                        for channel in CHAT_ROOMS:
+                            users_in_channel = CHAT_ROOMS[key]
+                            if (client_port in users_in_channel):
+                                curr_channel = channel 
                                 leave_channel(channel, client_port, sock)
                                 print("client {0} left channel {1}".format(client_port, channel))
                     broadcast_to_channel(srv_sock, sock, "Client ({0}) is offline\n".format(client_port), curr_channel) 
