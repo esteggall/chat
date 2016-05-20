@@ -96,13 +96,14 @@ def leave_channel(sock, curr_channel, client_id):
 join_channel      --  Adds the current user to a channel
 
 Args:
+srv_sock          -- socket belonging to the chat server
 sock              -- socket of the user issuing the query
 channel           -- channel the user wishes to join
 client_id         -- the port number of the client
 
 returns           -- 0 on success, -1 on failure
 """
-def join_channel(sock, channel, client_id):
+def join_channel(srv_sock, sock, channel, client_id):
     global CHAT_ROOMS
     # Check to make sure channel exists, throw error if not
     if channel not in CHAT_ROOMS:
@@ -111,6 +112,10 @@ def join_channel(sock, channel, client_id):
         return -1
     else:
         CHAT_ROOMS[channel].append(client_id)
+        users = CHAT_ROOMS[channel]
+        num_users = len(users)
+        num_users_msg = "\nThere are {0} user(s) in {1}\n".format(num_users, channel)
+        singlecast(sock, num_users_msg)
         print("added: {0} to {1}".format(client_id, channel))
     return 0
 
@@ -139,6 +144,7 @@ def create_channel(sock, new_channel, client_id):
 handle_chat_cmd   -- This function handles all admin tasks for the client
 
 Args:
+srv_sock          -- socket belonging to the chat server
 data              -- The full text of the message sent
 sock              -- socket of the user issuing the query
 client_port       -- the port number of the client
@@ -151,7 +157,7 @@ Functions:
 
 returns           -- 0 on success, -1 on failure
 """
-def handle_chat_cmd(data, sock, client_port, curr_channel):
+def handle_chat_cmd(srv_sock, data, sock, client_port, curr_channel):
     global USAGE
     global CHAT_ROOMS
     # Check to make sure user entered a valid option, if not throw error
@@ -165,7 +171,7 @@ def handle_chat_cmd(data, sock, client_port, curr_channel):
     if (data[1] == 'x'):
         leave_channel(sock, curr_channel, client_port)
         print("CHAT _ROOMTS = ", CHAT_ROOMS)
-        join_channel(sock, "Home", client_port)
+        join_channel(srv_sock, sock, "Home", client_port)
         print("user {0} exited chat room".format(client_port))
         return 0 
     # (l)ist
@@ -195,7 +201,7 @@ def handle_chat_cmd(data, sock, client_port, curr_channel):
         # (j)oin channel
         elif (data[1] == 'j'):
             leave_channel(sock, curr_channel, client_port)
-            join_channel(sock, channel, client_port)
+            join_channel(srv_sock, sock, channel, client_port)
         else:
             return -1
     return 0 
@@ -266,7 +272,7 @@ def event_loop(srv_sock):
                 if data:
                     # If the message begins with a '/' it is handled as an administrative command
                     if (data[0] == '/'):
-                        handle_chat_cmd(data, sock, client_port, curr_channel)
+                        handle_chat_cmd(srv_sock, data, sock, client_port, curr_channel)
                         print("chat rooms = {0}".format(CHAT_ROOMS))
                     # Otherwise we broadcast the message to the rest of the users in the chat room
                     else:
