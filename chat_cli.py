@@ -2,9 +2,9 @@
 # chat_cli.py
 # code templat for chat client from: http://www.bogotobogo.com/python/python_network_programming_tcp_server_client_chat_server_chat_client_select.php
 
-import sys, socket, select
+import sys, socket, select, time
 
-CHAT_ROOM = "Home"
+CHAT_ROOM = "Me"
 DATA_BUFF = 8192
  
 def chat_client():
@@ -51,8 +51,8 @@ def chat_client():
                 # user entered a message
                 msg = sys.stdin.readline()
                 s.send(msg)
-                print(msg)
-                if (msg[0] == '/'):
+                time.sleep(0.1)
+                """
                     if(msg[1] == 'j'):
                         channel = msg.split()[1]
                         if (channel):
@@ -61,8 +61,12 @@ def chat_client():
                             print("[ERROR] Need to specify chat room")
                     elif(msg[1] == 'x'):
                         CHAT_ROOM = "Home" 
+                """
         
                 sys.stdout.write('[' + CHAT_ROOM + '] '); sys.stdout.flush() 
+                if (msg[0] == '/'):
+                    continue
+                print(msg)
 
 if __name__ == "__main__":
 
