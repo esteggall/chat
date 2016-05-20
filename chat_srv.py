@@ -14,9 +14,25 @@ Chat Options:
      /c channel_name - (c)reate channel "channel_name"
      /j channel_name - (j)oin channel "channel_name" 
      /l - (l)ist channels" 
+     /t - list (t)his channel" 
      /u - list (u)sers in current channel" 
      /x - e(x)it channel, this option returns you Home\n
 """
+
+"""
+print_channel()      -- Singlecasts current channel to user on request
+
+Args:
+sock              -- socket of the user issuing the query
+curr_channel      -- channel of the user issuing the query
+
+returns           -- None
+"""
+def print_channel(sock, curr_channel):
+    msg = "\nChannel:\n{0}\n".format(curr_channel)
+    ret = singlecast(sock, msg)
+    if (ret < 0):
+        print("[ERROR] print_channel(): singlecast() failed!")
  
 """
 list_users()      -- lists all users that are in the same channel as the user isssuing the query
@@ -167,7 +183,7 @@ def handle_chat_cmd(srv_sock, data, sock, client_port, curr_channel):
     global USAGE
     global CHAT_ROOMS
     # Check to make sure user entered a valid option, if not throw error
-    if (data[1] != 'x' and data[1] != 'l' and data[1] != 'u' and data[1] != 'c' and data[1] != 'j'):
+    if (data[1] != 'x' and data[1] != 'l' and data[1] != 'u' and data[1] != 'c' and data[1] != 'j' and data[1] != 't'):
         err_msg = "\nyou entered /{0} which is not a valid option, please try again\n".format(data[1])
         singlecast(sock, err_msg)
         singlecast(sock, USAGE)
@@ -187,6 +203,11 @@ def handle_chat_cmd(srv_sock, data, sock, client_port, curr_channel):
     elif (data[1] == 'l'):
         channels = list_channels(sock, curr_channel)
         print("user {0} listed chat rooms".format(client_port))
+        return 0
+    # (t)his channel
+    elif (data[1] == 't'):
+        print_channel(sock, curr_channel)
+        print("user {0} queried chat room name".format(client_port))
         return 0
     # list (u)sers
     elif (data[1] == 'u'):
