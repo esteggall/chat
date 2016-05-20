@@ -89,9 +89,11 @@ def create_channel(new_channel, client_id, sock):
     return 0
 
 def handle_chat_cmd(data, sock, client_port, curr_channel):
+    global USAGE
     if (data[1] != 'x' and data[1] != 'l' and data[1] != 'u' and data[1] != 'c' and data[1] != 'j'):
         err_msg = "\nyou entered /{0} which is not a valid option, please try again\n".format(data[1])
         singlecast(sock, err_msg)
+        singlecast(sock, USAGE)
         print("you entered /{0} which is not a valid option, please try again".format(data[1]))
     if (data[1] == 'x'):
         print("exiting chat room")
