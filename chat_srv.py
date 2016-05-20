@@ -354,10 +354,27 @@ init_chat_server() -- This function initializes the chat server
 def init_chat_server():
     global SOCKET_LIST
     global CHAT_ROOMS
-    srv_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    srv_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    srv_sock.bind((HOSTNAME, PORT))
-    srv_sock.listen(NUM_LISTENERS)
+    try:
+        srv_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    except:
+        print("[ERROR] init_chat_server() Failed to create socket")
+        return -1
+    try:
+        srv_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    except:
+        print("[ERROR] init_chat_server() Failed to set socket options")
+        return -1
+    try:
+        srv_sock.bind((HOSTNAME, PORT))
+    except:
+        print("[ERROR] init_chat_server() Failed to bind to socket")
+        return -1
+    try:
+        srv_sock.listen(NUM_LISTENERS)
+    except:
+        print("[ERROR] init_chat_server() Failed to listen on socket")
+        return -1
+
     SOCKET_LIST.append(srv_sock)
     CHAT_ROOMS["Home"] = []
     print("Started chat server on port {0}".format(str(PORT)))
