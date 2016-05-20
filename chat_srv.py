@@ -78,7 +78,7 @@ def handle_chat_cmd(data, sock, client_port):
         print("exiting chat room")
         leave_channel(channel, client_port, sock)
         join_channel("Home", client_port, sock)
-        return 0
+        return 0 
     elif (data[1] == 'l'):
         print("listing chat rooms")
         channels = list_channels(curr_channel)
