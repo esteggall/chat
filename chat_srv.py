@@ -384,7 +384,6 @@ def init_chat_server():
     srv_sock.close()
  
 if __name__ == "__main__":
-    global PORT
     if (sys.argv[1]):
         PORT = int(sys.argv[1])
 
