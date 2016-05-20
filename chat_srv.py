@@ -12,6 +12,7 @@ CHAT_ROOMS = {}
 CLIENT_TO_CHAT = []
 
 def list_users(channel):
+    global CHAT_ROOMS
     users = CHAT_ROOMS.get(channel)
     print("users in chat room {0} are {1}".format(channel, users))
     users_msg = "\nUsers in {0}:\n".format(channel)
@@ -22,6 +23,8 @@ def list_users(channel):
     return users_msg
     
 def list_channels(curr_channel):
+    global CHAT_ROOMS
+    print("HURRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR")
     chat_rooms = CHAT_ROOMS.keys()
     print("Available Channels:")
     chat_rooms_msg = "\nAvailable Channels:\n"
@@ -35,6 +38,8 @@ def list_channels(curr_channel):
     return chat_rooms_msg
 
 def leave_channel(channel, client_id, sock):
+    global CLIENT_TO_CHAT
+    global CHAT_ROOMS
     for i, (channel,cli_id) in enumerate(CLIENT_TO_CHAT):
         if (cli_id == client_id):
             print("removing: {0},{1}".format(channel, cli_id))
@@ -50,6 +55,8 @@ def leave_channel(channel, client_id, sock):
     return -1
 
 def join_channel(channel, client_id, sock):
+    global CLIENT_TO_CHAT
+    global CHAT_ROOMS
     if channel not in CHAT_ROOMS:
         print("[ERROR] That channel does not exist")
         no_channel_msg = "\n[ERROR] That channel does not exist\n"
@@ -64,6 +71,7 @@ def join_channel(channel, client_id, sock):
     return 0
 
 def create_channel(new_channel, client_id, sock):
+    global CHAT_ROOMS
     if (new_channel in CHAT_ROOMS):
         print("Channel {0} already exists".format(new_channel))
         chat_exists_msg = "\nChannel {0} already exists\n".format(new_channel)
@@ -73,7 +81,8 @@ def create_channel(new_channel, client_id, sock):
     print("created new chat room: {0}".format(new_channel))
     return 0
 
-def handle_chat_cmd(data, sock, client_port):
+def handle_chat_cmd(data, sock, client_port, curr_channel):
+    print("########################### data = ", data)
     if (data[1] == 'x'):
         print("exiting chat room")
         leave_channel(channel, client_port, sock)
@@ -82,6 +91,7 @@ def handle_chat_cmd(data, sock, client_port):
     elif (data[1] == 'l'):
         print("listing chat rooms")
         channels = list_channels(curr_channel)
+        print("channels are {0}".format(channels))
         singlecast(sock, channels)
         return 0
     elif (data[1] == 'u'):
@@ -133,6 +143,7 @@ Chat Options:
 
 
 def event_loop(srv_sock):
+    global CLIENT_TO_CHAT
     ready_to_read,ready_to_write,in_error = select.select(SOCKET_LIST,[],[],0)
       
     for sock in ready_to_read:
@@ -148,8 +159,10 @@ def event_loop(srv_sock):
                         curr_channel = channel
                         break
                 if data:
+                    print("Data = {0}##########################".format(data))
                     if (data[0] == '/'):
-                        handle_chat_cmd(data, sock, curr_channel, client_port)
+                        print("Data = {0}".format(data))
+                        handle_chat_cmd(data, sock, client_port, curr_channel)
                     else:
                         print("client {0} wrote {1}".format(client_port, data))
                         broadcast_to_channel(srv_sock, sock, "\r" + curr_channel + ':[' + str(sock.getpeername()) + '] ' + data, curr_channel)  
@@ -168,6 +181,7 @@ def event_loop(srv_sock):
 
 
 def broadcast_to_channel(srv_sock, sock, message, channel):
+    global CHAT_ROOMS
     peers = CHAT_ROOMS.get(channel, None)
     print("peers in chat {0}".format(peers))
     for socket in SOCKET_LIST:
