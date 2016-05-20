@@ -10,6 +10,15 @@ PORT = 9009
 NUM_LISTENERS = 64
 CHAT_ROOMS = {}
 CLIENT_TO_CHAT = []
+USAGE = """
+Chat Options:
+     /c channel_name - (c)reate channel "channel_name"
+     /j channel_name - (j)oin channel "channel_name" 
+     /l - (l)ist channels" 
+     /u - list (u)sers in current channel" 
+     /x - e(x)it channel, this option returns you Home\n
+"""
+ 
 
 def list_users(channel):
     global CHAT_ROOMS
@@ -80,6 +89,10 @@ def create_channel(new_channel, client_id, sock):
     return 0
 
 def handle_chat_cmd(data, sock, client_port, curr_channel):
+    if (data[1] != 'x' and data[1] != 'l' and data[1] != 'u' and data[1] != 'c' and data[1] != 'j'):
+        err_msg = "\nyou entered /{0} which is not a valid option, please try again\n".format(data[1])
+        singlecast(sock, err_msg)
+        print("you entered /{0} which is not a valid option, please try again".format(data[1]))
     if (data[1] == 'x'):
         print("exiting chat room")
         leave_channel(channel, client_port, sock)
@@ -97,28 +110,26 @@ def handle_chat_cmd(data, sock, client_port, curr_channel):
         print(users_msg)
         singlecast(sock, users_msg)
         return 0 
+    cmd_tokenized = data.split()
+    channel = cmd_tokenized[1]
+    if not channel:
+        print("Please enter a channel")
+        return 0
     if (data[1] == 'c'):
-        channel = data.split()[1]
-        if not channel:
-            print("Please enter a channel")
-            return 0
         print("creating channel")
         create_channel(channel, client_port, sock)
     elif (data[1] == 'j'):
-        channel = data.split()[1]
-        if not channel:
-            print("Please enter a channel")
-            return 0
         print("joining chat room {0}".format(channel)) 
         join_channel(channel, client_port, sock)
     else:
-        print("you entered /{0} which is not a valid option, please try again".format(data[1]))
+        return -1
     return 0 
 
 
 def handle_new_client(srv_sock):
     global CHAT_ROOMS
     global CLIENT_TO_CHAT
+    global USAGE
     sockfd, addr = srv_sock.accept()
     # Addr is a tuple: (host, port)
     client_port = addr[1]
@@ -126,13 +137,7 @@ def handle_new_client(srv_sock):
     print "Client (%s, %s) connected" % addr
     CHAT_ROOMS["Home"].append(client_port)
     CLIENT_TO_CHAT.append(("Home", client_port))
-    message = """
-Chat Options:
-     /c channel_name - (c)reate channel "channel_name"
-     /j channel_name - (j)oin channel "channel_name" 
-     /l - (l)ist channels" 
-     /u - list (u)sers in current channel" 
-     /x - e(x)it channel, this option returns you Home\n"""
+    message = USAGE
     singlecast(sockfd, message) 
     list_channels("Home")
     broadcast_to_channel(srv_sock, sockfd, "[%s:%s] entered our chatting room\n" % addr, "Home")
